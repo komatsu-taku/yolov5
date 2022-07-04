@@ -1,0 +1,7 @@
+train: ./data/Sign/train
+val: ./data/Sign/val
+test: ./data/Sign/val
+
+nc: 3
+
+names: ["no overtaking", "give way", "no traffic both ways"]
