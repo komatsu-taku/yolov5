@@ -13,8 +13,10 @@ import glob
 from datetime import datetime, date, time
 import detect
 import draw_explanation as dr
-st.write("demo")
+
 dir='sign/'
+
+
 def pil2cv(image):
     ''' PIL型 -> OpenCV型 '''
     new_image = np.array(image, dtype=np.uint8)
@@ -25,6 +27,8 @@ def pil2cv(image):
     elif new_image.shape[2] == 4:  # 透過
         new_image = cv2.cvtColor(new_image, cv2.COLOR_RGBA2BGRA)
     return new_image
+
+
 def cv2pil(image):
     ''' OpenCV型 -> PIL型 '''
     new_image = image.copy()
@@ -36,8 +40,9 @@ def cv2pil(image):
         new_image = cv2.cvtColor(new_image, cv2.COLOR_BGRA2RGBA)
     new_image = Image.fromarray(new_image)
     return new_image
-# st.title("My first Streamlit app")
-# st.write("Hello, world")
+
+st.title("Traffic Sign Translator")
+st.write("demonstration")
 
 table=[]
 table.append(["no overtaking", '追い越し禁止', '9.png'])
