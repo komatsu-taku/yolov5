@@ -195,6 +195,7 @@ class LoadImages:
         self.files = images + videos
         self.nf = ni + nv  # number of files
         self.video_flag = [False] * ni + [True] * nv
+        # self.video_flag=False
         self.mode = 'image'
         self.auto = auto
         if any(videos):

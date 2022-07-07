@@ -1,7 +1,7 @@
 train: ./data/Sign/train
 val: ./data/Sign/val
-test: ./data/Sign/val
+test: ./data/Sign/test
 
-nc: 3
+nc: 9
 
-names: ["no overtaking", "give way", "no traffic both ways"]
+names: ["no overtaking", "priority at next intersection", "priority road", "give way", "no traffic both ways", "no trucks", "danger", "bend", "road narrows"]
