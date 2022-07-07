@@ -50,24 +50,22 @@ table.append(["danger", '危険', '18.png'])
 table.append(["bend", '連続カーブあり', '21.png'])
 table.append(["road narrows", '車線減少', '24.png'])
 
-# for i in a:
-#     table=np.append(table, np.array(i))
+
 class VideoProcessor:
     def recv(self, frame):
+        paths = []
+        texts = []
         f=dir
         img = frame.to_ndarray(format="bgr24")
-        img, s =detect.do(img)
-        print('s',s)
+        img, s = detect.do(img)
+        print('s', s)
         for i in table:
             if(i[0] in s):
-                s=i[1]
-                f+=i[2]
-                break
+                texts.append(i[1])
+                paths.append(f+i[2])
         print('check')
-        if f != dir:
-            img=dr.add_exp(img, f, s)
-        # st.image(cv2pil(img),caption = s.split()[-2],use_column_width = True)
-        # img = cv2.cvtColor(cv2.Canny(img, 100, 200), cv2.COLOR_GRAY2BGR)
+        if len(paths) > 0:
+            img = dr.add_exp(img, paths, texts)
 
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 

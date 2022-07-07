@@ -27,17 +27,17 @@ def cv2_putText_2(img, text, org, fontFace, fontScale, color):
     return imgCV
 
 
-def add_exp(img, anno_img_path, text):
+def add_exp(img, anno_img_paths, texts):
     now = time.time()
     # 画像をとってくる
 
     anno_im = img.copy()
-    y, x, _ = anno_im.shape
+    h, w, _ = anno_im.shape
 
     # 青色背景の表示
-    h_background = y // 5
+    h_background = h // 5
     blu1 = (0, 0)
-    blu2 = (x, h_background)
+    blu2 = (w, h_background)
     blue = (255, 200, 80)
     cv2.rectangle(
         anno_im,
@@ -48,17 +48,25 @@ def add_exp(img, anno_img_path, text):
         lineType=cv2.LINE_AA,
         shift=0)
 
+    # 青色背景を合成
     mat_im = cv2.addWeighted(anno_im, 0.4, img, 0.6, 0)
 
-    # 該当する画像の表示
-    sign_size = h_background // 2
-    ja_im = cv2.imread(anno_img_path)
-    ja_im = cv2.resize(ja_im, dsize=(sign_size, sign_size))
-    mat_im[0:sign_size, x-sign_size:x] = ja_im
-
-    # 文字の表示
+    # print(anno_im.shape)  # (360, 480, 3)
+    sign_size = h_background // 3 * 2
+    img_pad = h // 72
     font_path = "./GenShinGothic-Bold.ttf"
-    mat_im = cv2_putText_2(mat_im, text, (0, h_background // 2), font_path, 20, (0,0,0))
+    text_height = h // 18
+    text_pad = h // 72
+
+    # 検出したbboxの数だけ
+    for idx, (anno_img_path, text) in enumerate(zip(anno_img_paths, texts)):
+        # 該当する画像の描画
+        ja_im = cv2.imread(anno_img_path)
+        ja_im = cv2.resize(ja_im, dsize=(sign_size, sign_size))
+        mat_im[img_pad:img_pad+sign_size, w-(sign_size+img_pad)*(idx+1):w-img_pad-(sign_size+img_pad)*idx] = ja_im
+
+        # 文字の描画
+        mat_im = cv2_putText_2(mat_im, text, (text_pad, (idx + 1) * (text_pad + text_height)), font_path, text_height, (0, 0, 0))
 
     # cv2.imwrite('test2.png', mat_im)
 
