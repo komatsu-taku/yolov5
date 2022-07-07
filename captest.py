@@ -59,7 +59,7 @@ class VideoProcessor:
         img, s =detect.do(img)
         print('s',s)
         for i in table:
-            if(i[1] in s):
+            if(i[0] in s):
                 s=i[1]
                 f+=i[2]
                 break
