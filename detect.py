@@ -47,11 +47,57 @@ from utils.general import (LOGGER, check_file, check_img_size, check_imshow, che
                            increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, time_sync
+import streamlit as st
+from streamlit_webrtc import webrtc_streamer
+import av
+import cv2
+from re import U
+import streamlit as st
+from PIL import Image
+import cv2
+import numpy as np
+# import time
+import os
+# import glob
+# from datetime import datetime, date, time
+# import detect
+import draw_explanation as dr
 file_path="tmp/tmp.png"
 
 @torch.no_grad()
+def loadmodel(
+    weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
+    source=file_path,  # file/dir/URL/glob, 0 for webcam
+    data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
+    imgsz=(640, 640),  # inference size (height, width)
+    conf_thres=0.25,  # confidence threshold
+    iou_thres=0.45,  # NMS IOU threshold
+    max_det=1000,  # maximum detections per image
+    device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+    view_img=False,  # show results
+    save_txt=False,  # save results to *.txt
+    save_conf=False,  # save confidences in --save-txt labels
+    save_crop=False,  # save cropped prediction boxes
+    nosave=True,  # do not save images/videos
+    classes=None,  # filter by class: --class 0, or --class 0 2 3
+    agnostic_nms=False,  # class-agnostic NMS
+    augment=False,  # augmented inference
+    visualize=False,  # visualize features
+    update=False,  # update all models
+    project=ROOT / 'runs/detect',  # save results to project/name
+    name='exp',  # save results to project/name
+    exist_ok=False,  # existing project/name ok, do not increment
+    line_thickness=3,  # bounding box thickness (pixels)
+    hide_labels=False,  # hide labels
+    hide_conf=False,  # hide confidences
+    half=False,  # use FP16 half-precision inference
+    dnn=False,  # use OpenCV DNN for ONNX inference
+):
+    device = select_device(device)
+    return DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
 def run(
         path,
+        model,
         weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         source=file_path,  # file/dir/URL/glob, 0 for webcam
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
@@ -93,7 +139,7 @@ def run(
 
     # Load model
     device = select_device(device)
-    model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+    
     stride, names, pt = model.stride, model.names, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
@@ -263,23 +309,115 @@ def parse_opt():
     return opt
 
 
-def main(opt, path):
+def main(opt, path, model):
     check_requirements(exclude=('tensorboard', 'thop'))
-    img, s = run(path, **vars(opt))
+    img, s = run(path, model, **vars(opt))
     return img, s
-def do(img):
-    opt = parse_opt()
+def do(img,model):
+    # global model
+    # opt = parse_opt()
+    # model = loadmodel(**vars(opt)) 
     cv2.imwrite(file_path, img)
     # cv2.imshow('test',main(opt, file_path))
-    img, s = main(opt, file_path)
+    img, s = main(opt, file_path, model)
     return img, s
-    
+# class VideoProcessor:
+#     def recv(self, frame):
+#         paths = []
+#         texts = []
+#         f=dir
+#         img = frame.to_ndarray(format="bgr24")
+#         img, s = do(img)
+#         print('s', s)
+#         for i in table:
+#             if(i[0] in s):
+#                 texts.append(i[1])
+#                 paths.append(f+i[2])
+#         print('check')
+#         if len(paths) > 0:
+#             img = dr.add_exp(img, paths, texts)
+
+#         return av.VideoFrame.from_ndarray(img, format="bgr24")
+class VideoProcessor:
+    def recv(self, frame):
+        global model
+        paths = []
+        texts = []
+        f=dir
+        img = frame.to_ndarray(format="bgr24")
+        img, s = do(img, model)
+        print('s', s)
+        for i in table:
+            if(i[0] in s):
+                texts.append(i[1])
+                paths.append(f+i[2])
+        print('check')
+        if len(paths) > 0:
+            img = dr.add_exp(img, paths, texts)
+
+        return av.VideoFrame.from_ndarray(img, format="bgr24")
+def pil2cv(image):
+    ''' PIL型 -> OpenCV型 '''
+    new_image = np.array(image, dtype=np.uint8)
+    if new_image.ndim == 2:  # モノクロ
+        pass
+    elif new_image.shape[2] == 3:  # カラー
+        new_image = cv2.cvtColor(new_image, cv2.COLOR_RGB2BGR)
+    elif new_image.shape[2] == 4:  # 透過
+        new_image = cv2.cvtColor(new_image, cv2.COLOR_RGBA2BGRA)
+    return new_image
+
+
+def cv2pil(image):
+    ''' OpenCV型 -> PIL型 '''
+    new_image = image.copy()
+    if new_image.ndim == 2:  # モノクロ
+        pass
+    elif new_image.shape[2] == 3:  # カラー
+        new_image = cv2.cvtColor(new_image, cv2.COLOR_BGR2RGB)
+    elif new_image.shape[2] == 4:  # 透過
+        new_image = cv2.cvtColor(new_image, cv2.COLOR_BGRA2RGBA)
+    new_image = Image.fromarray(new_image)
+    return new_image
+
 if __name__ == "__main__":
     opt = parse_opt()
-    img=cv2.imread('00001.png')
-    cv2.imwrite(file_path, img)
-    img, s = main(opt, file_path)
-    cv2.imshow('test', img)
-    print(s)
+    model = loadmodel(**vars(opt)) 
+    # opt = parse_opt()
+    # img=cv2.imread('00001.png')
+    # cv2.imwrite(file_path, img)
+    # img, s = main(opt, file_path)
+    # cv2.imshow('test', img)
+    # print(s)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
+    dir='sign/'
+
+
+
+
+    st.title("Traffic Sign Translator")
+    st.write("demonstration")
+
+    table=[]
+    table.append(["no overtaking", '追い越し禁止', '9.png'])
+    table.append(["priority at next intersection",'一時優先', 'none.png'])
+    table.append(["priority road", '優先道路', '12.png'])
+    table.append(["give way", '前方優先道路・徐行', '13.png'])
+    table.append(["no traffic both ways", '車両通行禁止', '15.png'])
+    table.append(["no trucks", '3.5t以上の車両侵入禁止', '16.png'])
+    table.append(["danger", '危険', '18.png'])
+    table.append(["bend", '連続カーブあり', '21.png'])
+    table.append(["road narrows", '車線減少', '24.png'])
+    # global model 
+    webrtc_streamer(key="example", video_processor_factory=VideoProcessor)
+    
+
+
+
+
+
+
+
+
+
