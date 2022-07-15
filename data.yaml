@@ -1,7 +1,7 @@
-train: ./data/Sign/train
-val: ./data/Sign/val
-test: ./data/Sign/test
+train: ./data/Unity/train
+val: ./data/Unity/val
+test: ./data/Unity/val
 
-nc: 9
+nc: 3
 
-names: ["no overtaking", "priority at next intersection", "priority road", "give way", "no traffic both ways", "no trucks", "danger", "bend", "road narrows"]
+names: ["tea", "cola", "redbull"]
